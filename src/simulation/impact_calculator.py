@@ -1,25 +1,25 @@
 import numpy as np
+from src.models import SupplyChain
 
 class ImpactCalculator:
-    def __init__(self):
-        pass
+    def calculate_impact(self, chain: SupplyChain, params: dict):
+        # Simplified impact calculation
+        revenue_at_risk = 0
+        stockout_days = []
+        recovery_time = 0
+        affected_skus = []
 
-    def calculate_financial_impact(self, stockout_days, revenue_at_risk):
-        # Simplified financial impact calculation
+        for node in chain.nodes:
+            if "capacity_loss" in params and np.random.rand() < 0.1:  # 10% chance of disruption
+                capacity_loss = params["capacity_loss"]
+                stockout_days.append(capacity_loss * node.capacity)
+                revenue_at_risk += node.inventory_level * 0.5  # Simplified
+                recovery_time += np.random.normal(10, 2)  # Days to recover
+                affected_skus.append(node.id)
+
         return {
-            "total_loss": stockout_days * revenue_at_risk,
-            "revenue_at_risk": revenue_at_risk
+            "revenue_at_risk": revenue_at_risk,
+            "stockout_days": stockout_days,
+            "recovery_time": recovery_time,
+            "affected_skus": affected_skus
         }
-
-    def calculate_recovery_time(self, disruption_params):
-        # Recovery time based on disruption parameters
-        if "duration_days" in disruption_params:
-            return disruption_params["duration_days"] + np.random.exponential(2)
-        elif "impact_duration" in disruption_params:
-            return disruption_params["impact_duration"] + np.random.gamma(2, 1)
-        else:
-            return np.random.gamma(3, 2)
-
-    def calculate_affected_skus(self, chain, disruption_params):
-        # Determine affected SKUs based on disruption type
-        return ["SKU001", "SKU002"]

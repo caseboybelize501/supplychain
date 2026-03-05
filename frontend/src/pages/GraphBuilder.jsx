@@ -1,29 +1,37 @@
 import React, { useState } from 'react';
+import { Upload, Button, message } from 'antd';
+import axios from 'axios';
 
 const GraphBuilder = () => {
-  const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
-  
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target.result);
-          setGraphData(data);
-        } catch (err) {
-          console.error('Error parsing file:', err);
-        }
-      };
-      reader.readAsText(file);
+  const [fileList, setFileList] = useState([]);
+
+  const handleUpload = async (info) => {
+    const file = info.file;
+    if (file.type === 'application/json' || file.type === 'text/csv') {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        const response = await axios.post('/api/supply-chain/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        message.success('Upload successful');
+      } catch (error) {
+        message.error('Upload failed');
+      }
     }
   };
 
   return (
     <div>
-      <h1>Supply Chain Graph Builder</h1>
-      <input type="file" accept=".json,.csv" onChange={handleFileUpload} />
-      <div id="graph-container"></div>
+      <h2>Supply Chain Graph Builder</h2>
+      <Upload
+        beforeUpload={() => false}
+        onChange={handleUpload}
+        fileList={fileList}
+      >
+        <Button icon={<UploadOutlined />}>Click to Upload</Button>
+      </Upload>
     </div>
   );
 };

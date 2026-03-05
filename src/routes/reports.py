@@ -4,36 +4,22 @@ from src.synthesis.risk_narrator import RiskNarrator
 from src.exporters.pdf_exporter import PDFExporter
 import json
 
-reports_router = APIRouter()
+router = APIRouter(prefix="/report", tags=["Reports"])
 
-@reports_router.get("/{job_id}")
-def get_simulation_results(job_id: str):
+@router.get("/{id}/export")
+def export_report(id: str):
     try:
-        run = SimRun.get_by_id(job_id)
-        results = Result.get_by_run_id(job_id)
-        return {
-            "run": run,
-            "results": results
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Fetch simulation results
+        run = SimRun.objects.get(id=id)
+        result = Result.objects.get(sim_run=run)
 
-@reports_router.get("/{id}/report")
-def generate_risk_report(id: str):
-    try:
-        run = SimRun.get_by_id(id)
-        results = Result.get_by_run_id(id)
+        # Generate narrative
         narrator = RiskNarrator()
-        narrative = narrator.generate_narrative(run, results)
-        return narrative
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        narrative = narrator.generate_narrative(run, result)
 
-@reports_router.post("/{id}/export")
-def export_to_pdf(id: str):
-    try:
+        # Export to PDF
         exporter = PDFExporter()
-        pdf_path = exporter.export(id)
+        pdf_path = exporter.export_to_pdf(narrative)
         return {"pdf_path": pdf_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

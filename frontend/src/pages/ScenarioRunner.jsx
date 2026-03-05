@@ -1,38 +1,36 @@
 import React, { useState } from 'react';
+import { Button, Select, InputNumber } from 'antd';
+import axios from 'axios';
 
 const ScenarioRunner = () => {
   const [chainId, setChainId] = useState('');
-  const [scenario, setScenario] = useState('port_strike');
+  const [scenario, setScenario] = useState('');
   const [iterations, setIterations] = useState(1000);
-  
-  const handleRunSimulation = async () => {
+
+  const runSimulation = async () => {
     try {
-      const response = await fetch('/api/simulation/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chain_id: chainId, scenario, iterations })
+      const response = await axios.post('/api/simulation/run', {
+        chain_id: chainId,
+        scenario,
+        iterations
       });
-      
-      const result = await response.json();
-      console.log('Simulation started:', result);
+      alert(`Simulation started with job ID: ${response.data.job_id}`);
     } catch (error) {
-      console.error('Error starting simulation:', error);
+      alert('Failed to start simulation');
     }
   };
 
   return (
     <div>
-      <h1>Scenario Runner</h1>
-      <input placeholder="Chain ID" value={chainId} onChange={(e) => setChainId(e.target.value)} />
-      <select value={scenario} onChange={(e) => setScenario(e.target.value)}>
-        <option value="port_strike">Port Strike</option>
-        <option value="supplier_bankruptcy">Supplier Bankruptcy</option>
-        <option value="earthquake_region">Earthquake in Region</option>
-        <option value="demand_spike_3x">Demand Spike 3x</option>
-        <option value="tariff_increase_25pct">Tariff Increase 25%</option>
-      </select>
-      <input type="number" value={iterations} onChange={(e) => setIterations(parseInt(e.target.value))} />
-      <button onClick={handleRunSimulation}>Run Simulation</button>
+      <h2>Scenario Runner</h2>
+      <Input placeholder="Chain ID" value={chainId} onChange={(e) => setChainId(e.target.value)} />
+      <Select style={{ width: '100%' }} value={scenario} onChange={setScenario}>
+        <Select.Option value="port_strike">Port Strike</Select.Option>
+        <Select.Option value="supplier_bankruptcy">Supplier Bankruptcy</Select.Option>
+        {/* Add more scenarios */}
+      </Select>
+      <InputNumber min={100} max={10000} value={iterations} onChange={setIterations} />
+      <Button type="primary" onClick={runSimulation}>Run Simulation</Button>
     </div>
   );
 };

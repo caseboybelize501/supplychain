@@ -1,22 +1,23 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from src.routes.supply_chain import supply_chain_router
-from src.routes.reports import reports_router
-from celery import Celery
+from celery.result import AsyncResult
+from src.routes.supply_chain import router as supply_chain_router
+from src.routes.reports import router as reports_router
+from src.workers.sim_worker import celery_app
 import os
+
+class Settings:
+    database_url = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost/db")
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 app = FastAPI(title="AI Supply Chain Stress Tester")
 
-# Celery setup
-app.celery_app = Celery(
-    "supplychain_simulator",
-    broker=os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
-    backend=os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:63779/0")
-)
-
-# Include routers
-app.include_router(supply_chain_router, prefix="/api/supply-chain", tags=["supply_chain"])
-app.include_router(reports_router, prefix="/api/report", tags=["reports"])
+app.include_router(supply_chain_router)
+app.include_router(reports_router)
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy", "workers": 10, "queue_depth": 0}
+    return {
+        "status": "healthy",
+        "workers": len(celery_app.control.inspect().active() or {}),
+        "redis_queue_depth": celery_app.control.inspect().active_queues()
+    }

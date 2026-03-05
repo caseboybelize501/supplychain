@@ -1,42 +1,48 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text
-from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from pydantic import BaseModel
+from typing import List, Optional
 import uuid
 
-Base = declarative_base()
-
-class SupplyChain(Base):
-    __tablename__ = "supply_chains"
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = Column(String)
-    nodes = Column(Text)  # JSON string
-    edges = Column(Text)  # JSON string
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class Scenario(Base):
-    __tablename__ = "scenarios"
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = Column(String)
-    description = Column(Text)
-    parameters = Column(Text)  # JSON string
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class SimRun(Base):
-    __tablename__ = "sim_runs"
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    chain_id = Column(String)
-    scenario_id = Column(String)
-    iterations = Column(Integer)
-    status = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
+class Node(BaseModel):
+    id: str
+    name: str
+    type: str  # factory, supplier, distribution_center
+    lead_time_days: int
+    inventory_level: int
+    capacity: int
 
 
-class Result(Base):
-    __tablename__ = "results"
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    run_id = Column(String)
-    stockout_days = Column(Text)  # JSON string
-    revenue_at_risk = Column(Text)  # JSON string
-    recovery_time = Column(Text)  # JSON string
-    affected_skus = Column(Text)  # JSON string
-    created_at = Column(DateTime, default=datetime.utcnow)
+class Edge(BaseModel):
+    source_id: str
+    target_id: str
+    distance_km: float
+    cost_per_unit: float
+
+
+class SupplyChain(BaseModel):
+    id: str = str(uuid.uuid4())
+    name: str
+    nodes: List[Node]
+    edges: List[Edge]
+
+
+class Scenario(BaseModel):
+    id: str = str(uuid.uuid4())
+    name: str
+    description: str
+    parameters: dict
+
+
+class SimRun(BaseModel):
+    id: str = str(uuid.uuid4())
+    chain_id: str
+    scenario_id: str
+    iterations: int
+    status: str  # pending, running, completed
+
+
+class Result(BaseModel):
+    id: str = str(uuid.uuid4())
+    sim_run_id: str
+    p50: dict
+    p90: dict
+    p99: dict
